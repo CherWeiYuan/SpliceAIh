@@ -1,5 +1,36 @@
 # SpliceAIh
-Runs SpliceAI on phased variants
+Runs [SpliceAI](https://github.com/Illumina/SpliceAI) on phased variants generated from [WhatsHap](https://whatshap.readthedocs.io/en/latest/).
+
+The output reports SpliceAI scores given the haplotype specified in the phased VCF.
+
+WhatsHap can be replaced by any software that generate [pipe notation](https://whatshap.readthedocs.io/en/latest/guide.html#phasing-in-vcfs) in the VCF's GT field.
+
+## How to run SpliceAIh
+```
+# Run WhatsHap
+mamba activate whatshap
+whatshap phase \
+--indels \
+-o sample.phased.vcf \
+--reference genome/hg38.fa \
+sample.in.vcf \
+sample.in.bam
+mamba deactivate
+```
+
+```
+# Run SpliceAIh
+mamba activate spliceaih
+spliceaih \
+--vcf_file sample.phased.vcf \
+--max_read_length 200 \
+--fasta genome/hg38.fa \
+--annotation_file annotations/grch38.txt \
+--spliceai_dist 5000 \
+--single \
+--outdir outdir/sample
+mamba deactivate
+```
 
 ## Installation
 
