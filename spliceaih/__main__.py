@@ -40,7 +40,7 @@ def parse_args():
                         required = True,
                         help = "Name of genome fasta file. " +\
                                "Use either GRCh37 or GRCh38")
-    parser.add_argument("-g", "--annotation_file",
+    parser.add_argument("-a", "--annotation_file",
                         type = str,
                         required = True,
                         help = "grch38.txt or grch37.txt file downloaded " +\
@@ -49,6 +49,9 @@ def parse_args():
                         type = int,
                         default = 5000,
                         help = "Maximum distance between the variant and gained/lost splice site") 
+    parser.add_argument("-s", "--single_variants", 
+                        action = "store_true",
+                        help = "Run SpliceAI on both single variants and haplotypes")
     parser.add_argument("-o", "--outdir",
                         type = str,
                         default = "Sample",
@@ -62,13 +65,19 @@ def main():
     max_read_length = args.max_read_length
     annotation_file = args.annotation_file
     spliceai_dist = args.spliceai_dist
+    single_variants = args.single_variants
     outdir = args.outdir
     
-    # Make new directory
+    # Make output directory
     try:
         os.mkdir(outdir)
     except FileExistsError:
         pass
+
+    # Make temp directory
+    isExist = os.path.exists("spliceaih_temp")
+    if not isExist:
+        os.makedirs("spliceaih_temp")
 
     # Log
     init_logging(outdir)
@@ -77,21 +86,30 @@ def main():
     vcf_df = create_vcfdf(vcf_file)
     variant_blocks = find_variant_blocks(vcf_df, max_read_length)
     haplotype_blocks = split_variant_blocks(variant_blocks)
-    
+
     # Free memory
-    vcf_df = None
     variant_blocks = None
 
     # Load genomic data
     genome_dict = parse_genome(genome_fasta)
     ensembl = pyensembl.EnsemblRelease(108)
 
-    # Update output dataframe seed
+    # Create output dataframe seed
     output_seed = []
+
+    # Update single variant SpliceAI results in output dataframe seed
+    logging.info("Running SpliceAI on single variants")
+    if single_variants:
+        output_seed = update_df_seed_single_variant(vcf_df, output_seed, 
+                      genome_fasta, annotation_file, ensembl, spliceai_dist)
+
+    # Update haplotype SpliceAI results in output dataframe seed
+    logging.info("Running SpliceAI on haplotypes")
     pbar = tqdm(total = len(haplotype_blocks))
     for haplotype_block in haplotype_blocks:
         # If there is only one variant in the block, there is no phasing
         if len(haplotype_block) <= 1:
+            pbar.update()
             continue
         chrom = []
         pos_list = [] # Positions are extracted as 1-based
@@ -109,18 +127,28 @@ def main():
         else:
             sys.exit("Error: There are multiple chroms in one " +\
                      "variant block")
-        output_seed = update_df_seed(haplotype_block, output_seed, chrom, 
-                                     deepcopy(pos_list), ref_list, 
-                                     alt_list, annotation_file, 
-                                     genome_dict, ensembl, 
-                                     spliceai_dist)
+        output_seed = update_df_seed_haplotype(haplotype_block, output_seed, 
+                        chrom, deepcopy(pos_list), ref_list, alt_list, 
+                        annotation_file, genome_dict, ensembl, spliceai_dist)
         pbar.update()
 
     # Output as TSV
-    out_df = pd.DataFrame(output_seed, columns = ["variants", "landmark_pos", 
-                                                  "delta_scores",
+    out_df = pd.DataFrame(output_seed, columns = ["variants", 
+                                                  "landmark_pos", 
+                                                  "delta_scores", 
                                                   "highest_score"])
     out_df.to_csv(f"{outdir}/spliceaih_out.tsv", sep = "\t", index = False)
+
+    # Clear previous files to prevent failure to overwrite
+    for item in ("spliceaih_temp/temp_genome.fasta", 
+                 "spliceaih_temp/temp_genome.fasta.fai",
+                 f"spliceaih_temp/{annotation_file}.temp"):
+        try:
+            os.remove(item)
+        except FileNotFoundError:
+            pass
+
+    logging.info("Complete")
 
 if __name__ == "__main__":
     main()

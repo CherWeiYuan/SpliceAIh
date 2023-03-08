@@ -45,6 +45,7 @@ class Annotator:
     def get_name_and_strand(self, chrom, pos):
 
         chrom = normalise_chrom(chrom, list(self.chroms)[0])
+        # Get indices of genes in annotation that intersect with pos
         idxs = np.intersect1d(np.nonzero(self.chroms == chrom)[0],
                               np.intersect1d(np.nonzero(self.tx_starts <= pos)[0],
                               np.nonzero(pos <= self.tx_ends)[0]))
@@ -105,6 +106,7 @@ def get_delta_scores(record, ann, dist_var, mask):
 
     (genes, strands, idxs) = ann.get_name_and_strand(record.chrom, record.pos)
     if len(idxs) == 0:
+        logging.warning('Position not between transcript start and end: {}'.format(record))
         return delta_scores
 
     chrom = normalise_chrom(record.chrom, list(ann.ref_fasta.keys())[0])

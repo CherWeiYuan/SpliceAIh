@@ -139,7 +139,6 @@ def split_variant_blocks(blocks_list):
      (chrom, pos, ref, alt, gt1)], # block 2
     ]
 
-    
     Returns
     -------
     blocks_list: TYPE list. List of haplotypes, such as:
@@ -181,9 +180,41 @@ def split_variant_blocks(blocks_list):
             haplotype_list.append(block_haplotype[key])
     return haplotype_list
 
-def update_df_seed(haplotype_block, output_seed, 
-                   chrom, pos_list, ref_list, alt_list, 
-                   annotation_file, genome_dict, ensembl, spliceai_dist):
+def update_df_seed_single_variant(vcf_df, output_seed, genome_fasta, 
+                                  annotation_file, ensembl, spliceai_dist):
+    for index, row in vcf_df.iterrows():
+        single_chrom = vcf_df.loc[index, "chrom"]
+        single_pos = int(vcf_df.loc[index, "pos"])
+        single_ref = vcf_df.loc[index, "ref"]
+        single_alt = vcf_df.loc[index, "alt"]
+        genes_nearby = ensembl.gene_names_at_locus(
+            contig = single_chrom.replace("chr", ""), position = single_pos)
+        for gene_name in genes_nearby:
+            if gene_name == "":
+                continue
+            try:
+                gene_index = find_gene_index(gene_name, annotation_file)
+                exon_pos_dict = get_exon_positions(gene_name, annotation_file, 
+                                                   gene_index)
+            except GeneNotFoundError:
+                logging.warning(f"Warning: {gene_name} is not found in " +\
+                                "annotation file")
+            delta_scores = get_delta_scores(vcfRecord(single_chrom,   # CHROM
+                                                      single_pos,     # POS
+                                                      single_ref,     # REF
+                                                      single_alt),    # ALT
+                                            Annotator(genome_fasta, 
+                                                      annotation_file), 
+                                                      spliceai_dist, mask = 1)
+            highest_score = parse_spliceai(delta_scores, gene_name)
+            output_seed.append(((single_chrom, single_pos, single_ref, single_alt), 
+                                single_pos, delta_scores, highest_score))
+    return output_seed
+
+def update_df_seed_haplotype(haplotype_block, output_seed, 
+                             chrom, pos_list, ref_list, alt_list, 
+                             annotation_file, genome_dict, ensembl, 
+                             spliceai_dist):
     """
     For each haplotype, run SpliceAI on each landmark position
     and update dataframe seed. The dataframe seed will be used to create an
@@ -191,10 +222,12 @@ def update_df_seed(haplotype_block, output_seed,
     """
     for k in range(len(pos_list)):
         landmark_pos = int(pos_list[k])
+
         # Find genes nearby
         genes_nearby = ensembl.gene_names_at_locus(
             contig = chrom.replace("chr", ""), position = landmark_pos)
         for gene_name in genes_nearby:
+            pos_list_copy = deepcopy(pos_list)
             if gene_name == "":
                 continue
             try:
@@ -207,33 +240,36 @@ def update_df_seed(haplotype_block, output_seed,
             TX_END = exon_pos_dict["TX_END"]
             EXON_START = exon_pos_dict["EXON_START"]
             EXON_END = exon_pos_dict["EXON_END"]
+
             # Positions are fed into function as 1-based
-            mutgenann = mutate_genome_and_annotation(
-                    {chrom: genome_dict[chrom]}, landmark_pos, 
-                    chrom, deepcopy(pos_list), ref_list, alt_list, 
-                    gene_index, annotation_file, TX_END, EXON_START, 
-                    EXON_END)
-            mutgenann = None
+            try:
+                new_landmark_pos = mutate_genome_and_annotation(
+                    {chrom: genome_dict[chrom]}, # Careful not to modify genome_dict
+                    landmark_pos, chrom, pos_list_copy, 
+                    ref_list, alt_list, gene_index, annotation_file, 
+                    TX_END, EXON_START, EXON_END)
+            except AmbiguousDeletionError: 
+                continue
+            print(f"NEW LANDMARK: {new_landmark_pos}")
             delta_scores = get_delta_scores(
                 vcfRecord(chrom,              # CHROM
-                          landmark_pos,       # POS
+                          new_landmark_pos,   # landmark POS after shift
                           ref_list[k],        # REF
                           [alt_list[k]]),     # ALT
-                Annotator("temp_genome.fasta", 
-                          f"{annotation_file}.temp"), 
-                          spliceai_dist, mask = 1)
+                Annotator("spliceaih_temp/temp_genome.fasta", 
+                          f"{annotation_file}.temp"), spliceai_dist, mask = 1)
             highest_score = parse_spliceai(delta_scores, gene_name)
             output_seed.append((haplotype_block, landmark_pos, delta_scores, 
                                 highest_score))
-            for item in ("temp_genome.fasta", 
-                        "temp_genome.fasta.fai",
-                        f"{annotation_file}.temp"):
+            for item in ("spliceaih_temp/temp_genome.fasta", 
+                         "spliceaih_temp/temp_genome.fasta.fai",
+                        f"spliceaih_temp/{annotation_file}.temp"):
                 try:
                     os.remove(item)
                 except FileNotFoundError:
                     pass
     return output_seed
-                
+
 def parse_genome(genome_fasta):
     """
     Input
@@ -263,8 +299,8 @@ def snp_mutation(seq, pos, ref, alt):
         seq = seq[0: pos-1] + alt + seq[pos:]    
     else:
         raise UnexpectedRefError(f"Reference allele at position {pos + 1} is " +\
-                                 "wrongly specified. Please check reference " +\
-                                 "chromosome position.")
+                                  "wrongly specified. Please check reference " +\
+                                  "chromosome position.")
     return seq
 
 def insertion_mutation(seq, pos, ref, alt):
@@ -275,8 +311,8 @@ def insertion_mutation(seq, pos, ref, alt):
         seq = seq[0: pos-1] + alt + seq[pos:]
     else:
         raise UnexpectedRefError(f"Reference allele at position {pos + 1} is " +\
-                                 "wrongly specified. Please check reference " +\
-                                 "chromosome position.")
+                                  "wrongly specified. Please check reference " +\
+                                  "chromosome position.")
     return seq
 
 def deletion_mutation(seq, pos, ref, alt):
@@ -430,8 +466,13 @@ def mutate_genome_and_annotation(genome_dict, landmark_pos, chrom, pos, ref,
                        # list will create bugs
     shift_seq = 0
     shift_annotation = 0
+    new_landmark_pos = landmark_pos
     for i in range(len(pos)):
-        if i != pivot:
+        # Adjust landmark pos for insertions and deletions before it
+        if i == pivot and landmark_pos >= pos[i]:
+            new_landmark_pos += shift_seq
+        
+        elif i != pivot:
             # Adjust current position by amount of shift done by the 
             # previous iteration
             pos[i] += shift_seq
@@ -455,6 +496,7 @@ def mutate_genome_and_annotation(genome_dict, landmark_pos, chrom, pos, ref,
 
             ## Modify annotation file
             shift_annotation = abs(len(alt[i]) - len(ref[i]))
+            
             # Insertion
             if len(ref[i]) < len(alt[i]):
                 TX_END, EXON_START, EXON_END = shift_annotation_position(pos[i], 
@@ -468,7 +510,8 @@ def mutate_genome_and_annotation(genome_dict, landmark_pos, chrom, pos, ref,
             
 
     # Adjust TX_END, EXON_START, EXON_END in annotation file
-    df = pd.read_csv(f"{annotation_file}.temp", sep = "\t", low_memory = False)
+    df = pd.read_csv(f"{annotation_file}.temp", sep = "\t", 
+                     low_memory = False)
     
     exon_start = ''
     for i in EXON_START:
@@ -482,8 +525,8 @@ def mutate_genome_and_annotation(genome_dict, landmark_pos, chrom, pos, ref,
     df.loc[gene_index, "EXON_END"] = exon_end
 
     # Clear previous files to prevent failure to overwrite
-    for item in ("temp_genome.fasta", 
-                "temp_genome.fasta.fai"):
+    for item in ("spliceaih_temp/temp_genome.fasta", 
+                 "spliceaih_temp/temp_genome.fasta.fai"):
         try:
             os.remove(item)
         except FileNotFoundError:
@@ -491,8 +534,8 @@ def mutate_genome_and_annotation(genome_dict, landmark_pos, chrom, pos, ref,
 
     # Output files
     df.to_csv(f"{annotation_file}.temp", sep = "\t", index = False)
-    write_fasta(genome_dict, "temp_genome.fasta")
-    return genome_dict
+    write_fasta(genome_dict, "spliceaih_temp/temp_genome.fasta")
+    return new_landmark_pos
 
 class vcfRecord():
     def __init__(self, CHROM, POS, REF, ALT):
