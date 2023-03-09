@@ -14,7 +14,7 @@ from argparse import RawTextHelpFormatter
 from copy import deepcopy
 import pandas as pd
 import pyensembl
-from spliceaih.aux import *
+from spliceaih.auxiliary import *
 from spliceaih.utils import Annotator, get_delta_scores
 from tqdm import tqdm
 

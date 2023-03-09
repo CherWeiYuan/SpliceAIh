@@ -48,9 +48,10 @@ def create_vcfdf(vcf_file):
     vcf_reader = vcf.Reader(open(vcf_file, "r"))
     sample_names = vcf_reader.samples
     if len(sample_names) > 1:
-        sys.exit("Error: More than one sample names found in input VCF")
+        raise MultipleVcfSampleError()
     else:
         sample_name = sample_names[0]
+
     # Loop through VCF and create dataframe
     vcfdf_seed = []
     for record in vcf_reader:
@@ -247,10 +248,9 @@ def update_df_seed_haplotype(haplotype_block, output_seed,
                     {chrom: genome_dict[chrom]}, # Careful not to modify genome_dict
                     landmark_pos, chrom, pos_list_copy, 
                     ref_list, alt_list, gene_index, annotation_file, 
-                    TX_END, EXON_START, EXON_END)
+                    TX_END, EXON_START, EXON_END, out = "new_landmark_pos")
             except AmbiguousDeletionError: 
                 continue
-            print(f"NEW LANDMARK: {new_landmark_pos}")
             delta_scores = get_delta_scores(
                 vcfRecord(chrom,              # CHROM
                           new_landmark_pos,   # landmark POS after shift
@@ -424,7 +424,7 @@ def write_fasta(genome_dict, out):
 
 def mutate_genome_and_annotation(genome_dict, landmark_pos, chrom, pos, ref, 
                                  alt, gene_index, annotation_file, TX_END, 
-                                 EXON_START, EXON_END):
+                                 EXON_START, EXON_END, out):
     """
     Returns mutated genome dictionary
     
@@ -535,7 +535,13 @@ def mutate_genome_and_annotation(genome_dict, landmark_pos, chrom, pos, ref,
     # Output files
     df.to_csv(f"{annotation_file}.temp", sep = "\t", index = False)
     write_fasta(genome_dict, "spliceaih_temp/temp_genome.fasta")
-    return new_landmark_pos
+
+    if out == "new_landmark_pos":
+        return new_landmark_pos
+    elif out == "genome_dict":
+        return genome_dict
+    else:
+        raise UnspecifiedOutputType()
 
 class vcfRecord():
     def __init__(self, CHROM, POS, REF, ALT):
@@ -648,3 +654,10 @@ class UnexpectedMutationTypeError(Exception):
 
 class InputCheckError(Exception):
     pass
+
+class UnspecifiedOutputType(Exception):
+    pass
+
+class MultipleVcfSampleError(Exception):
+    def __init__(self):
+        super().__init__("Error: More than one sample names found in input VCF")
