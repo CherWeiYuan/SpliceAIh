@@ -242,7 +242,7 @@ class TestGenomeMutation(unittest.TestCase):
             genome_dict, landmark_pos = 3, chrom = "chr1", 
             pos = [1, 3, 5], ref = ["A", "A", "A"], alt = ["T", "T", "T"], 
             gene_index = 0, annotation_file = "test_data/grch38.txt", 
-            TX_END = 1, EXON_START = [1], EXON_END = [2]) 
+            TX_END = 1, EXON_START = [1], EXON_END = [2], out = "genome_dict") 
         self.assertEqual(result["chr1"], "TAAAT")
 
     def test_multiple_snp(self):
@@ -254,7 +254,7 @@ class TestGenomeMutation(unittest.TestCase):
             genome_dict, landmark_pos = 3, chrom = "chr1", pos = [1, 3, 6, 15], 
             ref = ["G", "T", "C", "T" ], alt = ["A", "A", "A", "A"], 
             gene_index = 0, annotation_file = "test_data/grch38.txt", 
-            TX_END = 1, EXON_START = [1], EXON_END = [2])
+            TX_END = 1, EXON_START = [1], EXON_END = [2], out = "genome_dict")
         self.assertEqual(result["chr1"], "AATAAAAAAAAAAAA")
 
     def test_two_deletions(self):
@@ -266,7 +266,7 @@ class TestGenomeMutation(unittest.TestCase):
             genome_dict, landmark_pos = 5, chrom = "chr1", pos = [1, 5, 8], 
             ref = ["AAA", "AT", "TTT"], alt = ["A", "A", "T"], gene_index = 0, 
             annotation_file = "test_data/grch38.txt", TX_END = 10, 
-            EXON_START = [1, 4, 8], EXON_END = [2, 5, 10])
+            EXON_START = [1, 4, 8], EXON_END = [2, 5, 10], out = "genome_dict")
         self.assertEqual(result["chr1"], "AAATTT")
 
     def test_multiple_deletions(self):
@@ -280,7 +280,8 @@ class TestGenomeMutation(unittest.TestCase):
             ref = ["AA", "TTT", "CCCCCCCC", "GGGG", "AAAAAAAAAAAA"], 
             alt = ["A", "T", "C", "G", "A"], 
             gene_index = 0, annotation_file = "test_data/grch38.txt", 
-            TX_END = 10, EXON_START = [1, 4, 8], EXON_END = [2, 5, 10])
+            TX_END = 10, EXON_START = [1, 4, 8], EXON_END = [2, 5, 10], 
+            out = "genome_dict")
         self.assertEqual(result["chr1"], "AATCGA")
 
     def test_two_insertions(self):
@@ -292,7 +293,8 @@ class TestGenomeMutation(unittest.TestCase):
             genome_dict, landmark_pos = 5, chrom = "chr1", pos = [1, 5, 29], 
             ref = ["A", "T", "A"], alt = ["ATTT", "TA", "ATTTGCGGCG"], 
             gene_index = 0, annotation_file = "test_data/grch38.txt", 
-            TX_END = 10, EXON_START = [1, 4, 8], EXON_END = [2, 5, 10])
+            TX_END = 10, EXON_START = [1, 4, 8], EXON_END = [2, 5, 10], 
+            out = "genome_dict")
         self.assertEqual(result["chr1"], "ATTTATTTCCCCCCCCGGGGAA" +\
                                          "AAAAAAAAAATTTGCGGCG")
 
@@ -307,7 +309,8 @@ class TestGenomeMutation(unittest.TestCase):
             ref = ["T", "T", "C", "G", "G"], 
             alt = ["TTTT", "TAAA", "CCC", "GGG", "GGGGG"], 
             gene_index = 0, annotation_file = "test_data/grch38.txt", 
-            TX_END = 10, EXON_START = [1, 4, 8], EXON_END = [2, 5, 10])
+            TX_END = 10, EXON_START = [1, 4, 8], EXON_END = [2, 5, 10], 
+            out = "genome_dict")
         self.assertEqual(result["chr1"], "TTTTATAAAAACAAGGGAAAAAGGGGG")
         
     def test_mutation_mixture(self):
@@ -321,7 +324,8 @@ class TestGenomeMutation(unittest.TestCase):
             ref = ["AAAAA", "T", "C", "G", "G"], 
             alt = ["A", "G", "CCC", "GGGATAT", "GGGGG"], 
             gene_index = 0, annotation_file = "test_data/grch38.txt", 
-            TX_END = 10, EXON_START = [1, 4, 8], EXON_END = [2, 5, 10])
+            TX_END = 10, EXON_START = [1, 4, 8], EXON_END = [2, 5, 10], 
+            out = "genome_dict")
         self.assertEqual(result["chr1"], "ATTTTTCCCCCCCGGGATATGGGGGGGG")
                                
     def test_ambiguous_deletion(self):
@@ -339,7 +343,8 @@ class TestGenomeMutation(unittest.TestCase):
                           annotation_file = "test_data/grch38.txt", 
                           TX_END = 10, 
                           EXON_START = [1, 4, 8], 
-                          EXON_END = [2, 5, 10])
+                          EXON_END = [2, 5, 10], 
+                          out = "genome_dict")
         
     def test_no_expected_change(self):
         """
@@ -354,7 +359,8 @@ class TestGenomeMutation(unittest.TestCase):
                           annotation_file = "test_data/grch38.txt", 
                           TX_END = 10, 
                           EXON_START = [1, 4, 8], 
-                          EXON_END = [2, 5, 10])    
+                          EXON_END = [2, 5, 10], 
+                          out = "genome_dict")    
         
     def test_landmark_not_found(self):
         """
@@ -368,7 +374,8 @@ class TestGenomeMutation(unittest.TestCase):
                           annotation_file = "test_data/grch38.txt", 
                           TX_END = 10, 
                           EXON_START = [1, 4, 8], 
-                          EXON_END = [2, 5, 10])
+                          EXON_END = [2, 5, 10], 
+                          out = "genome_dict")
 
 class TestGeneIndexSearch(unittest.TestCase):
     def test_find_OR4F5(self):
@@ -418,7 +425,7 @@ class TestAnnotationEditing(unittest.TestCase):
                     alt = ["G", "A"], gene_index = 7245, 
                     annotation_file = "test_data/grch38.txt", 
                     TX_END = tx_end, EXON_START = deepcopy(exon_start_pos), 
-                    EXON_END = deepcopy(exon_end_pos))
+                    EXON_END = deepcopy(exon_end_pos), out = "genome_dict")
 
         # Export and then load new output temp_anntest.tsv
         temp = pd.read_csv("test_data/grch38.txt.temp", sep = "\t", low_memory = False)
@@ -457,7 +464,7 @@ class TestAnnotationEditing(unittest.TestCase):
             alt = ["G", "G"], gene_index = 7245, 
             annotation_file = "test_data/grch38.txt", TX_END = tx_end, 
             EXON_START = deepcopy(exon_start_pos), 
-            EXON_END = deepcopy(exon_end_pos))
+            EXON_END = deepcopy(exon_end_pos), out = "genome_dict")
 
         # Export and then load new output temp_mixtest.tsv
         temp = pd.read_csv("test_data/grch38.txt.temp", sep = "\t", low_memory = False)
@@ -495,7 +502,7 @@ class TestAnnotationEditing(unittest.TestCase):
                     ref = ["A", "GTAGT", "T", "G"], alt = ["G", "G", "TT", "A"], 
                     gene_index = 7245, annotation_file = "test_data/grch38.txt", 
                     TX_END = tx_end, EXON_START = deepcopy(exon_start_pos), 
-                    EXON_END = deepcopy(exon_end_pos))
+                    EXON_END = deepcopy(exon_end_pos), out = "genome_dict")
 
         # Export and then load new output temp_mixtest.tsv
         temp = pd.read_csv("test_data/grch38.txt.temp", sep = "\t", low_memory = False)
