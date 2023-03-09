@@ -59,6 +59,10 @@ mamba deactivate
 
 ## Test codes
 ```
+# Unzip test data
+tar –xvzf test_data.tar.xz
+
+# Run test script
 mamba activate spliceaih
 python3 test.py
 mamba deactivate
