@@ -82,7 +82,9 @@ OK
 ## Trial run on positive control
 Note: The below codes require test_data.tar.xz to be decompressed and genome fasta to be downloaded (see above)
 
-Run SpliceAIh on two CFTR variants. This is a good positive control because modifying both the T(n) tract and TG(n) tract in intron 8 leads to incorrect splicing of exon 9. The extent of mis-splicing is increased with less T in T(n) tract and more TG repeats in the TG(n) tract.
+Run SpliceAIh on two CFTR variants. This is a good positive control because modifying both the T(n) tract and TG(n) tract in intron 8 leads to incorrect splicing of exon 9. The extent of mis-splicing is increased with less T in T(n) tract and more TG repeats in the TG(n) tract. 
+
+[[Source 1]](https://doi.org/10.1172/JCI639) [[Source 2]](https://doi.org/10.1093/hmg/8.13.2339) [[Source 3]](https://www.mdpi.com/2075-4418/11/2/168)
 ```
 mamba activate spliceaih
 mkdir -p sample_output
