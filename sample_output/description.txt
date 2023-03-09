@@ -1,0 +1,16 @@
+Trial run on positive control
+
+Run SpliceAIh on two CFTR variants. This is a good positive control because modifying both the T(n) tract and TG(n) tract in intron 8 leads to incorrect splicing of exon 9. The extent of mis-splicing is increased with less T in T(n) tract and more TG repeats in the TG(n) tract.
+
+mamba activate spliceaih
+mkdir -p sample_output
+spliceaih \
+--vcf_file test_data/CTFR_T5_TG13.vcf \
+--max_read_length 300 \
+--fasta genome/Homo_sapiens_assembly38.fasta \
+--annotation_file annotations/grch38.txt \
+--spliceai_dist 5000 \
+--single_variants \
+--outdir sample_output/TEST_CTFR_T5_TG13
+mamba deactivate
+
