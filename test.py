@@ -3,7 +3,7 @@ Test for SpliceAIc tool
 """
 
 from copy import deepcopy
-from spliceaih.aux import *
+from spliceaih.auxiliary import *
 import unittest
 import os
 
