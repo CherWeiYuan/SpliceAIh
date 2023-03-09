@@ -1,4 +1,4 @@
-<img src="https://github.com/CherWeiYuan/SpliceAIh/blob/main/logo/transparent.png?raw=true" width=600 height=180>
+<img src="https://github.com/CherWeiYuan/SpliceAIh/blob/main/logo/Original%20on%20Transparent.png?raw=true" width=600 height=170>
 
 Runs [SpliceAI](https://github.com/Illumina/SpliceAI) on phased variants generated from [WhatsHap](https://whatshap.readthedocs.io/en/latest/).
 
