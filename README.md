@@ -34,23 +34,27 @@ mamba deactivate
 
 ## Installation
 
-Create conda environment
-```
-mamba create --name spliceaih pip python=3.7 spliceai=1.3.1 pyvcf \
-pyensembl pandas tqdm -c bioconda -c anaconda -y
-```
-
-Install ENSEMBL release 108
-```
-mamba activate spliceaih
-pyensembl install --release 108 --species homo_sapiens
-mamba deactivate
-```
-
-Install SpliceAIh
+Option [1] Set up environment via conda
 ```
 git clone https://github.com/CherWeiYuan/SpliceAIh.git
 cd SpliceAIh
+
+mamba create --name spliceaih pip python=3.7 spliceai=1.3.1 pyvcf \
+pyensembl pandas tqdm -c bioconda -c anaconda -y
+
+mamba activate spliceaih
+pyensembl install --release 108 --species homo_sapiens
+pip install .
+mamba deactivate
+```
+
+Option [2] Install via yaml file
+```
+git clone https://github.com/CherWeiYuan/SpliceAIh.git
+cd SpliceAIh
+
+mamba create --name spliceaih pip python=3.7 -y
+mamba env update --name spliceaih --file env/spliceaih.yaml
 
 mamba activate spliceaih
 pip install .
