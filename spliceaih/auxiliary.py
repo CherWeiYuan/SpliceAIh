@@ -433,6 +433,11 @@ def mutate_genome_and_annotation(genome_dict, landmark_pos, chrom, pos, ref,
 
     Positions in pos of input are 1-based
     """
+    # Make temp directory
+    isExist = os.path.exists("spliceaih_temp")
+    if not isExist:
+        os.makedirs("spliceaih_temp")
+    
     # Create a temp annotation file for editing
     process_annotation_file(annotation_file)
 
