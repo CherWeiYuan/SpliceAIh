@@ -49,7 +49,7 @@ mamba deactivate
 ## Test codes
 ```
 # Unzip test data
-tar –xvzf test_data.tar.xz
+tar -xf test_data.tar.xz
 
 # Run test script
 mamba activate spliceaih
