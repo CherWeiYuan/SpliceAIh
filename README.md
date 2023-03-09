@@ -55,8 +55,7 @@ Download and unzip GRCh38 genome fasta
 mkdir -p genome
 curl -o genome/hg38.fa.gz \
 ftp://hgdownload.cse.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz
-cd genome
-gunzip hg38.fa.gz
+gunzip genome/hg38.fa.gz
 ```
 
 
@@ -81,6 +80,8 @@ OK
 
 
 ## Trial run on positive control
+Note: The below codes require test_data.tar.xz to be decompressed and genome fasta to be downloaded (see above)
+
 Run SpliceAIh on two CFTR variants. This is a good positive control because modifying both the T(n) tract and TG(n) tract in intron 8 leads to incorrect splicing of exon 9. The extent of mis-splicing is increased with less T in T(n) tract and more TG repeats in the TG(n) tract.
 ```
 mamba activate spliceaih
@@ -88,7 +89,7 @@ mkdir -p sample_output
 spliceaih \
 --vcf_file test_data/CTFR_T5_TG13.vcf \
 --max_read_length 300 \
---fasta genome/Homo_sapiens_assembly38.fasta \
+--fasta genome/hg38.fa \
 --annotation_file annotations/grch38.txt \
 --spliceai_dist 5000 \
 --single_variants \
@@ -98,15 +99,20 @@ mamba deactivate
 A sample output can be found in this repository in sample_output/TEST_CTFR_T5_TG13
 
 ## Output
-A row in the sample output looks like this:
+Three rows from the sample output looks like this:
 | variants  | landmark_pos | delta_scores | highest_score |
 | ------------- | ------------- | ------------- | ------------- |
+| ('chr7', 117548607, 'T', ['TGTGTG']) | 	117548607	| ['TGTGTG\|CFTR\|0.00\|0.04\|0.00\|0.00\|152\|34\|219\|211'] | 0.04 |
+| ('chr7', 117548629, 'TTT', ['T']) | 117548629 |	['T\|CFTR\|0.01\|0.00\|0.00\|0.00\|130\|2908\|-16\|189'] | 0.01 |
+| [('chr7', 117548607, 'T', ['TGTGTG'], '0\|1'), ('chr7', 117548629, 'TTT', ['T'], '0\|1')]	| 117548607	| ['TGTGTG\|CFTR\|0.00\|0.21\|0.00\|0.00\|150\|32\|333\|209']	| 0.21 |
 | [('chr7', 117548607, 'T', ['TGTGTG'], '0\|1'), ('chr7', 117548629, 'TTT', ['T'], '0\|1')] | 117548629 | ['T\|CFTR\|0.01\|0.22\|0.00\|0.00\|130\|12\|-714\|189'] | 0.22  |
 
-[Column 1] A list of phased variants. Each variant is annotated as (chromosome, genomic coordinate, reference allele, alternate alleles, genotype).
+[Column 1] A list of (phased) variants. Each variant is annotated as (chromosome, genomic coordinate, reference allele, alternate alleles, genotype if variant is phased).
 
 [Column 2] Landmark position refers to the position that is specified as wild-type in the reference genome and annotation; it will be considered as mutated during SpliceAI execution.
 
 [Column 3] Delta score refers to the [SpliceAI](https://github.com/Illumina/SpliceAI) output of ```ALLELE|SYMBOL|DS_AG|DS_AL|DS_DG|DS_DL|DP_AG|DP_AL|DP_DG|DP_DL```.
 
 [Column 4] The highest score refers to the highest score amongst the four SpliceAI delta scores.
+
+The first two rows in the table are computed when --single flag is raised, so single variants undergo SpliceAI. The scores are low (0.04 & 0.01). When the variants are considered together as phased (third and fourth row), the score is significantly higher (0.21 & 0.22).
