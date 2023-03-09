@@ -1,4 +1,5 @@
-# SpliceAIh
+<img src="https://github.com/CherWeiYuan/SpliceAIh/blob/main/logo/transparent.png?raw=true" width=600 height=180>
+
 Runs [SpliceAI](https://github.com/Illumina/SpliceAI) on phased variants generated from [WhatsHap](https://whatshap.readthedocs.io/en/latest/).
 
 The output reports SpliceAI scores given the haplotype specified in the phased VCF.
